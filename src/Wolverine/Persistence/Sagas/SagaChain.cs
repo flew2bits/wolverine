@@ -40,7 +40,7 @@ public class SagaChain : HandlerChain
                 e);
         }
 
-        SagaIdMember = DetermineMessageSagaIdMember(MessageType);
+        SagaIdMember = DetermineSagaIdMember(MessageType, SagaType);
     }
 
     public Type SagaType { get; }
@@ -53,19 +53,11 @@ public class SagaChain : HandlerChain
 
     public MethodCall[] NotFoundCalls { get; set; } = Array.Empty<MethodCall>();
 
-    internal static MemberInfo? DetermineSagaIdMember(Type messageType)
+    internal static MemberInfo? DetermineSagaIdMember(Type messageType, Type? sagaType = null)
     {
         var members = messageType.GetFields().OfType<MemberInfo>().Concat(messageType.GetProperties()).ToArray();
         return members.FirstOrDefault(x => x.HasAttribute<SagaIdentityAttribute>())
-               ?? members.FirstOrDefault(x => x.Name == SagaIdMemberName) ??
-               members.FirstOrDefault(x => x.Name.EqualsIgnoreCase("Id"));
-    }
-
-    private MemberInfo? DetermineMessageSagaIdMember(Type messageType)
-    {
-        var members = messageType.GetFields().OfType<MemberInfo>().Concat(messageType.GetProperties()).ToArray();
-        return members.FirstOrDefault(x => x.HasAttribute<SagaIdentityAttribute>())
-               ?? members.FirstOrDefault(x => x.Name.EqualsIgnoreCase($"{SagaType.Name}Id"))
+               ?? (sagaType is null ? null : members.FirstOrDefault(x => x.Name.EqualsIgnoreCase($"{sagaType.Name}Id")))
                ?? members.FirstOrDefault(x => x.Name == SagaIdMemberName) ??
                members.FirstOrDefault(x => x.Name.EqualsIgnoreCase("Id"));
     }
